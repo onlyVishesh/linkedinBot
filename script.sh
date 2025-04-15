@@ -50,6 +50,7 @@ EOL
     exit 1
 fi
 
+
 # Install required packages
 echo "Installing required packages..."
 pip install -r requirements.txt || {
@@ -62,7 +63,7 @@ pandas
 lxml
 EOL
     pip install -r requirements.txt
-}
+}           
 
 # Check for chromedriver
 echo "Checking for Chrome and chromedriver..."

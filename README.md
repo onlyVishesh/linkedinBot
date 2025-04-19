@@ -1,6 +1,5 @@
 # LinkedinBot - Automating the process of applying and getting referrals easier
 
-
 ### Overview
 
 It consists of three stages
@@ -10,12 +9,10 @@ It consists of three stages
 - in the first Stage the bot fetches the list of all people working in your dream companies and stores them in a csv file
 - ![stage1](https://user-images.githubusercontent.com/69706506/124388286-5ec40380-dcf3-11eb-9c2d-8f8ef83ae1e5.gif)
 
-
 #### Stage2
 
 - In the second stage the bot goes into all the profiles of the persons from the first stage and scraps all their previous experiences including the company Name, Duration and their work details and store them in a csv file
 - ![stage2](https://user-images.githubusercontent.com/69706506/124388631-c595ec80-dcf4-11eb-8d70-5454e9fa35e4.gif)
-
 
 #### Stage3
 
@@ -31,7 +28,7 @@ It consists of three stages
 
 ### Installation
 
-- Clone the respository using the command `git clone https://gitlab.com/<your_username>/linkedinBot.git`  
+- Clone the respository using the command `git clone https://gitlab.com/<your_username>/linkedinBot.git`
 - Install all the dependencies using `pip3 install -r requirements.txt`
 
 ### You will require to install Chrome
@@ -39,21 +36,45 @@ It consists of three stages
 - chmod u+=rwx install_chrome.sh
 - ./install_chrome.sh
 
-### You require the Chrome driver for the respective version of your chrome. 
+### You require the Chrome driver for the respective version of your chrome.
 
 - chmod u+=rwx get_chrome_driver.sh
 - ./get_chrome_driver.sh
 
-Place the chrome driver in the driver folder and you are good to go. One chrome driver is already present but you just need to keep the driver which 
-runs for your Chrome version. Refer this [link](https://chromedriver.chromium.org/downloads) to get the correct chrome driver version for you. 
-
+Place the chrome driver in the driver folder and you are good to go. One chrome driver is already present but you just need to keep the driver which
+runs for your Chrome version. Refer this [link](https://chromedriver.chromium.org/downloads) to get the correct chrome driver version for you.
 
 ### Run it on Local Machine
 
 - In the config.py file add you Linkedin Username, Linkedin Password ,the customized message you want to send and the your dream companies
-- chmod u+=rwx script.sh
-- ./script
+- chmod u+=rwx run_all_stages.sh
+- ./run_all_stages.sh
 
+### Project Organization and Cleanup
+
+The project has been organized into a streamlined structure with only the essential files needed to run the LinkedIn Bot. To clean up any unnecessary files (debug files, screenshots, old scripts):
+
+1. Make the cleanup script executable:
+
+   ```bash
+   chmod +x cleanup.sh
+   ```
+
+2. Run the cleanup script:
+   ```bash
+   ./cleanup.sh
+   ```
+
+This will remove all debug files, screenshots, and other unnecessary files while keeping the essential components of the bot intact. For more details about which files are essential and which ones can be safely removed, see `CLEANUP_INFO.md`.
+
+#### Script Files for Running the Bot
+
+- `run_all_stages.sh`: Runs all stages in sequence
+- `run_stage1.sh`: Runs only Stage 1 (Profile collection)
+- `run_stage2.sh`: Runs only Stage 2 (Role extraction)
+- `run_stage3.sh`: Runs only Stage 3 (HR-prioritized connection)
+
+For detailed information on using these scripts, see `SCRIPTS_README.md`.
 
 ### Contributing
 
@@ -87,21 +108,21 @@ orientation.
 Examples of behavior that contributes to creating a positive environment
 include:
 
-* Using welcoming and inclusive language
-* Being respectful of differing viewpoints and experiences
-* Gracefully accepting constructive criticism
-* Focusing on what is best for the community
-* Showing empathy towards other community members
+- Using welcoming and inclusive language
+- Being respectful of differing viewpoints and experiences
+- Gracefully accepting constructive criticism
+- Focusing on what is best for the community
+- Showing empathy towards other community members
 
 Examples of unacceptable behavior by participants include:
 
-* The use of sexualized language or imagery and unwelcome sexual attention or
+- The use of sexualized language or imagery and unwelcome sexual attention or
   advances
-* Trolling, insulting/derogatory comments, and personal or political attacks
-* Public or private harassment
-* Publishing others' private information, such as a physical or electronic
+- Trolling, insulting/derogatory comments, and personal or political attacks
+- Public or private harassment
+- Publishing others' private information, such as a physical or electronic
   address, without explicit permission
-* Other conduct which could reasonably be considered inappropriate in a
+- Other conduct which could reasonably be considered inappropriate in a
   professional setting
 
 ### Scope
@@ -132,7 +153,6 @@ This Code of Conduct is adapted from the [Contributor Covenant][homepage], versi
 available at [http://contributor-covenant.org/version/1/4][version]
 
 [homepage]: http://contributor-covenant.org
-
 [version]: http://contributor-covenant.org/version/1/4/
 
 ### Caution

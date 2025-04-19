@@ -5,8 +5,173 @@ import time
 import random
 import sys
 import traceback
+import pandas as pd
+import csv
+import re
+
+# Function to load role data from CSV files
+def load_role_data():
+    try:
+        # Load roles data
+        roles_df = pd.read_csv("roles_of_person_in_pervious_list.csv")
+        people_df = pd.read_csv("names_and_positions.csv")
+        
+        # Clean up data (remove duplicate entries, etc.)
+        roles_df = roles_df.dropna(subset=['Name', 'Company_Name'])
+        
+        print(f"Loaded {len(roles_df)} role entries and {len(people_df)} people entries")
+        return roles_df, people_df
+    except Exception as e:
+        print(f"Error loading role data: {e}")
+        return None, None
+
+# Function to check if a person is in HR
+def is_hr_role(job_title):
+    if not job_title or job_title == "Not found":
+        return False
+    
+    hr_keywords = [
+        "hr", "human resources", "talent", "recruiting", "recruiter", 
+        "personnel", "people operations", "hiring", "recruitment",
+        "talent acquisition", "staffing", "people", "workforce", 
+        "employee experience", "human capital", "talent management",
+        "talent specialist", "hiring manager", "recruiting manager",
+        "hr business partner", "hrbp", "hr generalist", "hr specialist",
+        "talent partner", "people partner", "recruiting coordinator"
+    ]
+    
+    job_title_lower = job_title.lower()
+    return any(keyword in job_title_lower for keyword in hr_keywords)
+
+# Function to extract keywords from job description
+def extract_keywords_from_job_description(job_description):
+    if not job_description or job_description == "Not found":
+        return []
+        
+    # Common tech keywords to look for
+    tech_keywords = [
+        "javascript", "react", "node", "python", "java", "aws", "cloud", 
+        "fullstack", "frontend", "backend", "web", "mobile", "app", 
+        "software", "developer", "engineer", "tech", "code", "programming",
+        "devops", "ai", "machine learning", "data", "api", "database"
+    ]
+    
+    # Extract keywords that appear in the job description
+    job_desc_lower = job_description.lower()
+    found_keywords = [keyword for keyword in tech_keywords if keyword in job_desc_lower]
+    
+    return found_keywords
+
+# Enhanced function to create personalized message based on role, company and job description
+def create_personalized_message(person_name, job_title, company_name, job_description=None):
+    # Default to first name only
+    first_name = person_name.split()[0] if person_name and len(person_name.split()) > 0 else "there"
+    
+    # Base message template
+    base_message = config.message
+    
+    # Check if the person is in HR - prioritize HR contacts
+    if is_hr_role(job_title):
+        # Create specialized HR-specific message
+        message = f"Hi {first_name}, "
+        
+        # Core HR message - ensure it's under 200 characters including the personalization
+        if company_name and company_name != "Not found":
+            company_name_clean = re.sub(r'·.*$', '', company_name).strip()
+            if len(company_name_clean) > 20:
+                company_name_clean = company_name_clean[:20] + "..."
+                
+            hr_message = f"As {company_name_clean}'s {job_title}, you might be looking for tech talent. I'm a full-stack developer with 5+ projects and 30% performance gains. Can we connect about matching my skills with your tech openings? Portfolio: onlyvishesh.vercel.app"
+        else:
+            hr_message = f"As a {job_title}, you might be looking for tech talent. I'm a full-stack developer with 5+ projects and 30% performance improvements. Can we connect about open tech roles at your company? Portfolio: onlyvishesh.vercel.app"
+        
+        message += hr_message
+    else:
+        # Non-HR message
+        message = f"Hi {first_name}! "
+        
+        # Extract relevant tech keywords from job description if available
+        tech_keywords = extract_keywords_from_job_description(job_description)
+        
+        # If we have tech keywords, customize message to mention them (limit to 2 keywords max)
+        if tech_keywords and len(tech_keywords) > 0:
+            tech_str = ", ".join(tech_keywords[:2])
+            if "MERN" in base_message and tech_str:
+                # Replace generic "MERN expertise" with specific tech keywords
+                base_message = base_message.replace("MERN expertise", f"{tech_str} expertise")
+        
+        # Add the base message
+        message += base_message
+        
+        # Personalize based on company name if available
+        if company_name and company_name != "Not found":
+            # Extract just the company name without extras
+            company_name_clean = re.sub(r'·.*$', '', company_name).strip()
+            
+            # If company name is too long, use shortened version
+            if len(company_name_clean) > 30:
+                company_name_clean = company_name_clean[:30] + "..."
+                
+            # Replace "your company" with actual company name
+            message = message.replace("your company", company_name_clean)
+    
+    # Make sure the message is under 200 characters
+    if len(message) > 200:
+        message = message[:197] + "..."
+        
+    return message
+
+# Function to prioritize HR profiles when processing a list of employee profiles
+def prioritize_hr_profiles(employee_containers, driver):
+    """
+    Sorts the employee profiles to prioritize HR professionals.
+    Returns a sorted list with HR profiles first.
+    """
+    prioritized_profiles = []
+    non_hr_profiles = []
+    
+    print("Analyzing profiles to identify and prioritize HR professionals...")
+    
+    for container in employee_containers:
+        # Get the job title from the container
+        try:
+            job_title_selectors = [
+                ".org-people-profile-card__profile-position",
+                ".artdeco-entity-lockup__subtitle",
+                ".artdeco-entity-lockup__caption"
+            ]
+            
+            job_title = None
+            for selector in job_title_selectors:
+                try:
+                    title_element = container.find_element(By.CSS_SELECTOR, selector)
+                    if title_element and title_element.text.strip():
+                        job_title = title_element.text.strip()
+                        break
+                except:
+                    continue
+            
+            # If we found a job title, check if it's an HR role
+            if job_title and is_hr_role(job_title):
+                print(f"Found HR profile with title: {job_title}")
+                prioritized_profiles.append((container, True))  # True indicates HR role
+            else:
+                non_hr_profiles.append((container, False))  # False indicates non-HR role
+                
+        except Exception as e:
+            print(f"Error analyzing profile for HR role: {e}")
+            non_hr_profiles.append((container, False))
+    
+    # Combine lists with HR profiles first
+    sorted_profiles = prioritized_profiles + non_hr_profiles
+    
+    print(f"Prioritized {len(prioritized_profiles)} HR profiles out of {len(sorted_profiles)} total profiles")
+    return sorted_profiles
 
 try:
+    # Load role data
+    roles_df, people_df = load_role_data()
+    
     # Use companies directly from config instead of CSV
     target_companies = config.companies_list
     print(f"Target companies from config: {', '.join(target_companies)}")
@@ -288,19 +453,70 @@ try:
                                                     if message_box:
                                                         # Try to get person's name
                                                         try:
-                                                            profile_name = driver.find_element(By.CSS_SELECTOR, "h1.text-heading-xlarge").text.split()[0]
-                                                            personalized_message = f"Hi {profile_name},\n\n" + config.message
+                                                            profile_name = driver.find_element(By.CSS_SELECTOR, "h1.text-heading-xlarge").text
                                                         except:
-                                                            personalized_message = config.message
+                                                            profile_name = None
                                                             
-                                                        # Add message
+                                                        # Get profile URL to identify the person
                                                         try:
-                                                            message_box.clear()
-                                                            message_box.send_keys(personalized_message)
-                                                            print("Added personalized message")
+                                                            profile_url = driver.current_url.split('?')[0]
                                                         except:
-                                                            driver.execute_script("arguments[0].value = arguments[1]", message_box, personalized_message)
-                                                            print("Added message using JavaScript")
+                                                            profile_url = None
+                                                            
+                                                        # Try to get current position
+                                                        try:
+                                                            profile_position = driver.find_element(By.CSS_SELECTOR, ".text-body-medium.break-words").text
+                                                        except:
+                                                            profile_position = None
+                                                            
+                                                        # Try to get company information from the page
+                                                        try:
+                                                            company_info = driver.find_element(By.CSS_SELECTOR, ".inline-show-more-text.inline-show-more-text--is-collapsed").text
+                                                        except:
+                                                            company_info = company_name
+                                                            
+                                                        # Look up additional data from our CSV files
+                                                        additional_info = None
+                                                        job_desc = None
+                                                        
+                                                        if roles_df is not None and profile_name:
+                                                            # Find matching entries in our roles database
+                                                            matching_roles = roles_df[roles_df['Name'].str.contains(profile_name.split()[0], case=False, na=False)]
+                                                            
+                                                            if not matching_roles.empty:
+                                                                # Get first match
+                                                                first_match = matching_roles.iloc[0]
+                                                                additional_info = first_match.get('Company_Name')
+                                                                job_desc = first_match.get('Information')
+                                                                
+                                                                # Print what we found
+                                                                print(f"Found additional info for {profile_name}: {additional_info}")
+                                                        
+                                                        # Create personalized message based on all collected info
+                                                        personalized_message = create_personalized_message(
+                                                            profile_name, 
+                                                            profile_position, 
+                                                            company_info if company_info else additional_info,
+                                                            job_desc
+                                                        )
+                                                        
+                                                        # Log priority for HR professionals
+                                                        if profile_position and is_hr_role(profile_position):
+                                                            print(f"Prioritizing message to HR professional: {profile_position}")
+                                                        
+                                                        # Add personalized message to textarea
+                                                        try:
+                                                            textarea = message_box
+                                                            textarea.clear()
+                                                            textarea.send_keys(personalized_message)
+                                                            print(f"Added personalized message: {personalized_message}")
+                                                        except:
+                                                            # Try with JavaScript if normal method fails
+                                                            try:
+                                                                driver.execute_script("arguments[0].value = arguments[1]", textarea, personalized_message)
+                                                                print("Added message using JavaScript")
+                                                            except Exception as e:
+                                                                print(f"Failed to add message: {e}")
                                                             
                                                         time.sleep(random.uniform(1, 2))
                                                     else:
@@ -327,33 +543,7 @@ try:
                                                             
                                                     if send_button:
                                                         driver.execute_script("arguments[0].click();", send_button)
-                                                        print("Sent connection request with note")
-                                                        connection_count += 1
-                                                    else:
-                                                        print("Could not find send button")
-                                                else:
-                                                    # If no add note button found, try to find and click the send button directly
-                                                    send_button = None
-                                                    send_selectors = [
-                                                        "button.artdeco-button--primary",
-                                                        "button[aria-label='Send now']",
-                                                        "button[type='submit']"
-                                                    ]
-                                                    
-                                                    for selector in send_selectors:
-                                                        elements = driver.find_elements(By.CSS_SELECTOR, selector)
-                                                        for elem in elements:
-                                                            if elem.is_displayed() and any(text in elem.text for text in ["Send", "send", "Connect", "connect"]):
-                                                                send_button = elem
-                                                                print(f"Found send button: {elem.text}")
-                                                                break
-                                                                
-                                                        if send_button:
-                                                            break
-                                                            
-                                                    if send_button:
-                                                        driver.execute_script("arguments[0].click();", send_button)
-                                                        print("Sent connection request without note")
+                                                        print("Sent connection request with personalized note")
                                                         connection_count += 1
                                                     else:
                                                         print("Could not find send button")
@@ -379,13 +569,24 @@ try:
                 continue
             
             # Process employee profiles
-            print(f"Processing up to 5 employee profiles from {company_name}...")
-            for i, container in enumerate(employee_containers[:5]):
+            print(f"Processing employee profiles from {company_name}...")
+
+            # Prioritize HR profiles in the list
+            prioritized_profiles = prioritize_hr_profiles(employee_containers, driver)
+
+            # Process prioritized profiles - process more profiles (up to 10) instead of just 5
+            for i, (container, is_hr) in enumerate(prioritized_profiles[:10]):
                 if connection_count >= 99:
                     print("Reached maximum connection limit. Stopping.")
                     break
                     
                 try:
+                    # Print whether this is an HR profile
+                    if is_hr:
+                        print(f"Processing HR profile {i+1}/{len(prioritized_profiles[:10])}")
+                    else:
+                        print(f"Processing non-HR profile {i+1}/{len(prioritized_profiles[:10])}")
+                    
                     # Get person's name for personalization
                     person_name = None
                     try:
@@ -398,13 +599,34 @@ try:
                             try:
                                 name_element = container.find_element(By.CSS_SELECTOR, selector)
                                 if name_element:
-                                    person_name = name_element.text.split()[0]
+                                    person_name = name_element.text
                                     print(f"Found person name: {person_name}")
                                     break
                             except:
                                 continue
                     except Exception as e:
                         print(f"Could not get person name: {e}")
+                        
+                    # Get job title
+                    job_title = None
+                    try:
+                        title_selectors = [
+                            ".org-people-profile-card__profile-position",
+                            ".artdeco-entity-lockup__subtitle",
+                            ".artdeco-entity-lockup__caption"
+                        ]
+                        
+                        for selector in title_selectors:
+                            try:
+                                title_element = container.find_element(By.CSS_SELECTOR, selector)
+                                if title_element:
+                                    job_title = title_element.text
+                                    print(f"Found job title: {job_title}")
+                                    break
+                            except:
+                                continue
+                    except Exception as e:
+                        print(f"Could not get job title: {e}")
                         
                     # Scroll to make the profile visible
                     driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", container)
@@ -465,210 +687,136 @@ try:
                         
                     # Click connect button
                     try:
-                        driver.execute_script("arguments[0].click();", connect_button)
-                        print("Clicked connect button")
-                        time.sleep(random.uniform(2, 3))
-                    except Exception as e:
-                        print(f"Error clicking connect button: {e}")
-                        continue
+                        # Scroll button into view and click
+                        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", connect_button)
+                        time.sleep(random.uniform(1, 1.5))
                         
-                    # Look for "Add a note" option - updated selectors for newer LinkedIn UI
-                    add_note_button = None
-                    note_selectors = [
-                        "button[aria-label='Add a note']",
-                        "button.artdeco-button--secondary",
-                        "button.artdeco-button--muted",
-                        "button.artdeco-modal__confirm-dialog-btn"
-                    ]
-                    
-                    # First look for buttons containing "Add a note" text
-                    buttons = driver.find_elements(By.TAG_NAME, "button")
-                    for btn in buttons:
                         try:
-                            if btn.is_displayed() and ("Add a note" in btn.text or "add a note" in btn.text.lower()):
-                                add_note_button = btn
-                                print(f"Found 'Add a note' button by text: '{btn.text}'")
-                                break
-                        except:
-                            continue
+                            # Use JavaScript click which is more reliable
+                            driver.execute_script("arguments[0].click();", connect_button)
+                            print(f"Clicked connect button for profile {i+1}")
+                            time.sleep(random.uniform(2, 3))
                             
-                    # If not found by text, try selectors
-                    if not add_note_button:
-                        for selector in note_selectors:
-                            try:
-                                elements = driver.find_elements(By.CSS_SELECTOR, selector)
-                                for elem in elements:
-                                    if elem.is_displayed():
-                                        add_note_button = elem
-                                        print(f"Found potential 'Add a note' button with selector: {selector}")
-                                        break
-                            except:
-                                continue
-                                
-                            if add_note_button:
-                                break
-                                
-                    if add_note_button:
-                        # Click "Add a note" button
-                        try:
-                            driver.execute_script("arguments[0].click();", add_note_button)
-                            print("Clicked 'Add a note' button")
-                            time.sleep(random.uniform(1, 2))
-                        except Exception as e:
-                            print(f"Error clicking 'Add a note' button: {e}")
-                            
-                            # Try to find and click send button directly
-                            try:
-                                send_buttons = driver.find_elements(By.CSS_SELECTOR, "button.artdeco-button--primary")
-                                for btn in send_buttons:
-                                    if btn.is_displayed() and any(text in btn.text for text in ["Send", "Connect"]):
-                                        driver.execute_script("arguments[0].click();", btn)
-                                        print("Sent connection request without note")
-                                        connection_count += 1
-                                        break
-                            except:
-                                print("Could not send connection request")
-                            
-                            continue
-                            
-                        # Find textarea for note
-                        textarea = None
-                        textarea_selectors = [
-                            "textarea.ember-text-area",
-                            "textarea[name='message']",
-                            "textarea.send-invite__custom-message",
-                            "textarea.artdeco-text-input--input"
-                        ]
-                        
-                        for selector in textarea_selectors:
-                            try:
-                                elements = driver.find_elements(By.CSS_SELECTOR, selector)
-                                for elem in elements:
-                                    if elem.is_displayed():
-                                        textarea = elem
-                                        print(f"Found textarea with selector: {selector}")
-                                        break
-                            except:
-                                continue
-                                
-                            if textarea:
-                                break
-                                
-                        if textarea:
-                            # Create personalized message
-                            if person_name:
-                                personalized_message = f"Hi {person_name},\n\n" + config.message
-                            else:
-                                personalized_message = config.message
-                                
-                            # Add personalized message to textarea
-                            try:
-                                textarea.clear()
-                                textarea.send_keys(personalized_message)
-                                print("Added personalized message")
-                            except:
-                                # Try with JavaScript if normal method fails
-                                try:
-                                    driver.execute_script("arguments[0].value = arguments[1]", textarea, personalized_message)
-                                    print("Added message using JavaScript")
-                                except Exception as e:
-                                    print(f"Failed to add message: {e}")
-                                    
-                            time.sleep(random.uniform(1, 2))
-                            
-                            # Find and click send button
-                            send_button = None
-                            send_selectors = [
-                                "button.artdeco-button--primary",
-                                "button[aria-label='Send now']",
-                                "button[type='submit']"
+                            # Look for the "Add a note" option
+                            add_note_button = None
+                            note_selectors = [
+                                "button.artdeco-button--secondary",
+                                "button.artdeco-modal__confirm-dialog-btn",
+                                "button[aria-label='Add a note']"
                             ]
                             
-                            for selector in send_selectors:
+                            for selector in note_selectors:
                                 try:
-                                    elements = driver.find_elements(By.CSS_SELECTOR, selector)
-                                    for elem in elements:
-                                        if elem.is_displayed() and any(text in elem.text for text in ["Send", "send", "Done", "done"]):
-                                            send_button = elem
-                                            print(f"Found send button: {elem.text}")
+                                    buttons = driver.find_elements(By.CSS_SELECTOR, selector)
+                                    for btn in buttons:
+                                        if btn.is_displayed() and any(text in btn.text.lower() for text in ["add a note", "note", "personalize"]):
+                                            add_note_button = btn
+                                            print(f"Found 'Add a note' button: {btn.text}")
                                             break
                                 except:
                                     continue
                                     
-                                if send_button:
+                                if add_note_button:
                                     break
                                     
-                            if send_button:
-                                try:
-                                    driver.execute_script("arguments[0].click();", send_button)
-                                    print("Sent connection request with personalized note")
-                                    connection_count += 1
-                                except Exception as e:
-                                    print(f"Error clicking send button: {e}")
-                            else:
-                                print("Could not find send button")
-                        else:
-                            print("Could not find textarea for note")
-                            
-                            # Try to find and click send button directly
-                            try:
-                                send_buttons = driver.find_elements(By.CSS_SELECTOR, "button.artdeco-button--primary")
-                                for btn in send_buttons:
-                                    if btn.is_displayed() and any(text in btn.text for text in ["Send", "Connect"]):
-                                        driver.execute_script("arguments[0].click();", btn)
-                                        print("Sent connection request without note")
+                            if add_note_button:
+                                # Click the "Add a note" button
+                                driver.execute_script("arguments[0].click();", add_note_button)
+                                print("Clicked 'Add a note' button")
+                                time.sleep(random.uniform(1, 2))
+                                
+                                # Find the textarea for the note
+                                textarea = None
+                                textarea_selectors = [
+                                    "textarea.ember-text-area",
+                                    "textarea.artdeco-text-input--input",
+                                    "textarea[name='message']"
+                                ]
+                                
+                                for selector in textarea_selectors:
+                                    elements = driver.find_elements(By.CSS_SELECTOR, selector)
+                                    for elem in elements:
+                                        if elem.is_displayed():
+                                            textarea = elem
+                                            print(f"Found textarea with selector: {selector}")
+                                            break
+                                            
+                                    if textarea:
+                                        break
+                                        
+                                if textarea:
+                                    # Lookup additional information from our CSV data if possible
+                                    additional_info = None
+                                    job_desc = None
+                                    
+                                    if roles_df is not None and person_name:
+                                        # Find matching entries in our roles database
+                                        matching_roles = roles_df[roles_df['Name'].str.contains(person_name.split()[0], case=False, na=False)]
+                                        
+                                        if not matching_roles.empty:
+                                            # Get first match
+                                            first_match = matching_roles.iloc[0]
+                                            additional_info = first_match.get('Company_Name')
+                                            job_desc = first_match.get('Information')
+                                            
+                                            # Print what we found
+                                            print(f"Found additional info from CSV for {person_name}")
+                                    
+                                    # Check if this is an HR professional and prioritize accordingly
+                                    is_hr_professional = job_title and is_hr_role(job_title)
+                                    if is_hr_professional:
+                                        print(f"Creating specialized message for HR professional with title: {job_title}")
+                                    
+                                    # Create personalized message using all available information
+                                    personalized_message = create_personalized_message(
+                                        person_name,  # Full name 
+                                        job_title,    # Job title from profile
+                                        company_name, # Company name 
+                                        job_desc      # Additional job description if available
+                                    )
+                                    
+                                    # Add the personalized message to the textarea
+                                    try:
+                                        textarea.clear()
+                                        textarea.send_keys(personalized_message)
+                                        print(f"Added personalized message: {personalized_message}")
+                                    except Exception as e:
+                                        # Try with JavaScript if normal method fails
+                                        try:
+                                            driver.execute_script("arguments[0].value = arguments[1]", textarea, personalized_message)
+                                            print("Added message using JavaScript")
+                                        except Exception as e:
+                                            print(f"Failed to add message: {e}")
+                                            
+                                    time.sleep(random.uniform(1, 2))
+                                    
+                                    # Find and click the Send button
+                                    send_button = None
+                                    for selector in ["button.artdeco-button--primary", "button[aria-label='Send now']"]:
+                                        elements = driver.find_elements(By.CSS_SELECTOR, selector)
+                                        for element in elements:
+                                            if element.is_displayed() and any(text in element.text.lower() for text in ["send", "done"]):
+                                                send_button = element
+                                                break
+                                                
+                                        if send_button:
+                                            break
+                                            
+                                    if send_button:
+                                        # Click the Send button and count this as a connection
+                                        driver.execute_script("arguments[0].click();", send_button)
+                                        print(f"Sent connection request to {person_name}" + 
+                                              (f" (HR Professional)" if is_hr_professional else ""))
                                         connection_count += 1
-                                        break
-                            except:
-                                print("Could not send connection request")
-                    else:
-                        # If no "Add a note" button, just send connection
-                        send_button = None
-                        send_selectors = [
-                            "button.artdeco-button--primary",
-                            "button[aria-label='Send now']",
-                            "button[type='submit']"
-                        ]
-                        
-                        for selector in send_selectors:
-                            try:
-                                elements = driver.find_elements(By.CSS_SELECTOR, selector)
-                                for elem in elements:
-                                    if elem.is_displayed() and any(text in elem.text for text in ["Send", "send", "Connect", "connect"]):
-                                        send_button = elem
-                                        print(f"Found send button: {elem.text}")
-                                        break
-                            except:
-                                continue
-                                
-                            if send_button:
-                                break
-                                
-                        if send_button:
-                            try:
-                                driver.execute_script("arguments[0].click();", send_button)
-                                print("Sent connection request without note")
-                                connection_count += 1
-                            except Exception as e:
-                                print(f"Error clicking send button: {e}")
-                        else:
-                            print("Could not find send button")
-                            
-                    # Wait between connection attempts
-                    delay = random.uniform(5, 8)
-                    print(f"Waiting {delay:.1f} seconds before next connection...")
-                    time.sleep(delay)
-                    
-                    # Try to dismiss any open modal dialogs that might be left over
-                    try:
-                        dismiss_buttons = driver.find_elements(By.CSS_SELECTOR, "button.artdeco-modal__dismiss")
-                        for btn in dismiss_buttons:
-                            if btn.is_displayed():
-                                driver.execute_script("arguments[0].click();", btn)
-                                print("Dismissed modal dialog")
-                                time.sleep(1)
-                    except:
-                        pass
+                                        
+                                        # Add short delay to avoid server errors
+                                        time.sleep(random.uniform(2, 3))
+                                    else:
+                                        print("Could not find Send button")
+                        except Exception as e:
+                            print(f"Error with 'Add a note' flow: {e}")
+                    except Exception as e:
+                        print(f"Error clicking connect button: {e}")
                         
                 except Exception as e:
                     print(f"Error with profile {i+1}: {e}")

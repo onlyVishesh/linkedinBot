@@ -11,7 +11,7 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}==================================${NC}"
-echo -e "${BLUE}    LinkedIn Bot - Stage 3    ${NC}"
+echo -e "${BLUE}        LinkedIn Bot - Stage      ${NC}"
 echo -e "${BLUE}==================================${NC}"
 
 # Create logs directory if it doesn't exist
@@ -19,7 +19,7 @@ mkdir -p logs
 
 # Start timestamp
 START_TIME=$(date +"%Y-%m-%d %H:%M:%S")
-echo -e "${GREEN}Starting Stage 3 at ${START_TIME}${NC}"
+echo -e "${GREEN}Starting Stage at ${START_TIME}${NC}"
 
 # Check for prerequisite files
 echo -e "${YELLOW}Checking prerequisites...${NC}"
@@ -49,19 +49,19 @@ if [ $? -ne 0 ]; then
 fi
 echo -e "${GREEN}Successfully logged into LinkedIn${NC}"
 
-# Run Stage 3 - Connect with HR professionals first, then others
-echo -e "\n${YELLOW}Running Stage 3 - Connecting with HR professionals...${NC}"
+# Run Stage - Connect with HR professionals first, then others
+echo -e "\n${YELLOW}Running Stage - Connecting with HR professionals...${NC}"
 echo -e "${BLUE}This will prioritize HR professionals and send personalized connection requests${NC}"
 echo -e "${BLUE}Using data from previous stages to customize messages (if available)${NC}"
-python3 stage3.py 2>&1 | tee logs/stage3_$(date +"%Y%m%d_%H%M%S").log
+python3 stage.py 2>&1 | tee logs/stage_$(date +"%Y%m%d_%H%M%S").log
 if [ $? -ne 0 ]; then
-    echo -e "${RED}Stage 3 failed. Check the logs for details.${NC}"
+    echo -e "${RED}Stage failed. Check the logs for details.${NC}"
     exit 1
 fi
 
 # End timestamp
 END_TIME=$(date +"%Y-%m-%d %H:%M:%S")
-echo -e "\n${GREEN}Stage 3 completed at ${END_TIME}${NC}"
+echo -e "\n${GREEN}Stage completed at ${END_TIME}${NC}"
 echo -e "${BLUE}==================================${NC}"
 
 # Summary

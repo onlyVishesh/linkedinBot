@@ -1,169 +1,118 @@
-# LinkedinBot - Automating the process of applying and getting referrals easier
+# LinkedIn Connection Bot
 
-### Overview
+An automated solution for making strategic LinkedIn connections with personalized messages, prioritizing HR professionals.
 
-It consists of three stages
+## Overview
 
-#### Stage 1
+This LinkedIn Bot automates the process of connecting with professionals from your target companies. It focuses on:
 
-- in the first Stage the bot fetches the list of all people working in your dream companies and stores them in a csv file
-- ![stage1](https://user-images.githubusercontent.com/69706506/124388286-5ec40380-dcf3-11eb-9c2d-8f8ef83ae1e5.gif)
+1. **HR Prioritization**: Identifies and prioritizes HR professionals who might be hiring for relevant positions
+2. **Personalized Messages**: Sends custom connection requests tailored to each recipient's role
+3. **Smart Targeting**: Connects with professionals from your specified target companies
 
-#### Stage2
+> **⚠️ IMPORTANT**: LinkedIn only allows approximately 5 personalized note connections per month for standard accounts. I am working on a fix that will first send connection requests without notes and store them. Then, when they accept, the next time you run the code it will send custom messages to these connections before sending new connection requests.
 
-- In the second stage the bot goes into all the profiles of the persons from the first stage and scraps all their previous experiences including the company Name, Duration and their work details and store them in a csv file
-- ![stage2](https://user-images.githubusercontent.com/69706506/124388631-c595ec80-dcf4-11eb-8d70-5454e9fa35e4.gif)
+## Features
 
-#### Stage3
+- **HR Detection**: Automatically identifies HR professionals using job title analysis
+- **Message Customization**: Creates different messages for HR vs. non-HR professionals
+- **Keyword Optimization**: Extracts keywords from job descriptions to customize technical messages
+- **Connection Management**: Limits connections to stay within LinkedIn's restrictions
+- **Company Targeting**: Directly navigates to company pages for efficient profile discovery
+- **Error Handling**: Robust error management with debugging screenshots
+- **Session Management**: Detects session timeouts and provides clear instructions
 
-- In the third stage we retrieve the data of the companies from the second stage and we basically clean the data from the second stage to remove stop words such as Full-time, part-time, contract etc. after cleaning the data we go into each company people section on linkedin and send a customized connection request to all the people working there with a note and your resume.
-- ![stage](https://user-images.githubusercontent.com/69706506/124388953-2a057b80-dcf6-11eb-9200-232bb3e80bd1.gif)
+## Requirements
 
-### Requirements
+- Python 3.6 or higher
+- Chrome browser
+- ChromeDriver (automatically installed by the script)
+- Python packages:
+  - selenium
+  - webdriver-manager
+  - beautifulsoup4
+  - lxml
+  - pandas
 
-- Python3
-- Selenium
-- Beatiful Soup
-- Chrome Driver
+## Setup
 
-### Installation
-
-- Clone the respository using the command `git clone https://gitlab.com/<your_username>/linkedinBot.git`
-- Install all the dependencies using `pip3 install -r requirements.txt`
-
-### You will require to install Chrome
-
-- chmod u+=rwx install_chrome.sh
-- ./install_chrome.sh
-
-### You require the Chrome driver for the respective version of your chrome.
-
-- chmod u+=rwx get_chrome_driver.sh
-- ./get_chrome_driver.sh
-
-Place the chrome driver in the driver folder and you are good to go. One chrome driver is already present but you just need to keep the driver which
-runs for your Chrome version. Refer this [link](https://chromedriver.chromium.org/downloads) to get the correct chrome driver version for you.
-
-### Run it on Local Machine
-
-- In the config.py file add you Linkedin Username, Linkedin Password ,the customized message you want to send and the your dream companies
-- chmod u+=rwx run_all_stages.sh
-- ./run_all_stages.sh
-
-### Project Organization and Cleanup
-
-The project has been organized into a streamlined structure with only the essential files needed to run the LinkedIn Bot. To clean up any unnecessary files (debug files, screenshots, old scripts):
-
-1. Make the cleanup script executable:
-
-   ```bash
-   chmod +x cleanup.sh
+1. Update `config.py` with your credentials and preferences:
+   ```python
+   username = "Your_email"
+   password = "LinkedIn_Password"
+   
+   # your dream companies list, you can add more companies also
+   companies_list = ["amazon", "google", "microsoft"]
+   
+   # General message template (under 200 characters)
+   message = """Your Message"""
+   
+   # HR-specific message template (under 200 characters)
+   hr_message = """Your HR Message"""
    ```
 
-2. Run the cleanup script:
+2. Run the setup script:
    ```bash
-   ./cleanup.sh
+   bash get_chrome_driver.sh
    ```
 
-This will remove all debug files, screenshots, and other unnecessary files while keeping the essential components of the bot intact. For more details about which files are essential and which ones can be safely removed, see `CLEANUP_INFO.md`.
+3. Launch the bot:
+   ```bash
+   bash run_stage.sh
+   ```
 
-#### Script Files for Running the Bot
+## How It Works
 
-- `run_all_stages.sh`: Runs all stages in sequence
-- `run_stage1.sh`: Runs only Stage 1 (Profile collection)
-- `run_stage2.sh`: Runs only Stage 2 (Role extraction)
-- `run_stage3.sh`: Runs only Stage 3 (HR-prioritized connection)
+1. **Login**: Securely logs into your LinkedIn account
+2. **Company Processing**: Navigates to each company in your list
+3. **Profile Analysis**: Scans employee profiles on company pages
+4. **HR Prioritization**: Identifies HR professionals and processes them first
+5. **Smart Messaging**:
+   - For HR: Sends specialized messages mentioning your relevant skills for their hiring needs
+   - For Others: Personalizes messages based on their role and company
 
-For detailed information on using these scripts, see `SCRIPTS_README.md`.
+## Message Customization Logic
 
-### Contributing
+The bot creates personalized messages based on:
 
-When contributing to this repository, please first discuss the change you wish to make via issue,
-email, or any other method with the owners of this repository before making a change.
+- **Recipient's first name**: "Hi [First Name]"
+- **Role detection**: Different message templates for HR vs. non-HR professionals
+- **Company name**: Includes company name when available
+- **Technical keywords**: For developers/engineers, highlights matching technical skills
 
-Please note we have a code of conduct, please follow it in all your interactions with the project.
+## Best Practices
 
-## Pull Request Process
+- **Be realistic**: Start with a small number of target companies
+- **Monitor connections**: Check your LinkedIn notifications for responses
+- **Personalize config**: Update the message templates to reflect your authentic voice
+- **Stay within limits**: LinkedIn limits connection requests; the script respects these limits
+- **Be patient**: Allow sufficient time between runs to avoid account restrictions
 
-1. Ensure any install or build dependencies are removed before the end of the layer when doing a
-   build.
-2. Update the README.md with details of changes to the interface, this includes new environment
-   variables, exposed ports, useful file locations and container parameters.
-3. You may merge the Pull Request in once you have the sign-off of two other developers, or if you
-   do not have permission to do that, you may request the second reviewer to merge it for you.
+## Troubleshooting
 
-## Code of Conduct
+- **Login issues**: Verify your LinkedIn credentials in config.py
+- **ChromeDriver errors**: Run the get_chrome_driver.sh script to update
+- **Page navigation failures**: Check company names in your companies_list (use lowercase, no spaces)
+- **Connection errors**: LinkedIn may temporarily limit connection requests; wait 24 hours
+- **Session timeouts**: Re-run login.py to start a fresh session
 
-### Our Pledge
+## Advanced Configuration
 
-In the interest of fostering an open and welcoming environment, we as
-contributors and maintainers pledge to making participation in our project and
-our community a harassment-free experience for everyone, regardless of age, body
-size, disability, ethnicity, gender identity and expression, level of experience,
-nationality, personal appearance, race, religion, or sexual identity and
-orientation.
+- Modify the `is_hr_role()` function in stage.py to customize HR role detection
+- Adjust timeout and delay values in the code if you have a slower internet connection
+- Add additional companies to your target list in config.py
 
-### Our Standards
+## Future Enhancements
 
-Examples of behavior that contributes to creating a positive environment
-include:
+- Implement follow-up message automation
+- Add connection acceptance tracking
+- Create report generation for connection statistics
+- Implement multi-stage connection strategy for LinkedIn's new connection limits
+- Store pending connection requests and send personalized messages once accepted
 
-- Using welcoming and inclusive language
-- Being respectful of differing viewpoints and experiences
-- Gracefully accepting constructive criticism
-- Focusing on what is best for the community
-- Showing empathy towards other community members
+## Disclaimer
 
-Examples of unacceptable behavior by participants include:
+This tool is for educational purposes only. Use responsibly and in accordance with LinkedIn's terms of service. Excessive automation may lead to account restrictions.
 
-- The use of sexualized language or imagery and unwelcome sexual attention or
-  advances
-- Trolling, insulting/derogatory comments, and personal or political attacks
-- Public or private harassment
-- Publishing others' private information, such as a physical or electronic
-  address, without explicit permission
-- Other conduct which could reasonably be considered inappropriate in a
-  professional setting
+## Thanks
 
-### Scope
-
-This Code of Conduct applies both within project spaces and in public spaces
-when an individual is representing the project or its community. Examples of
-representing a project or community include using an official project e-mail
-address, posting via an official social media account, or acting as an appointed
-representative at an online or offline event. Representation of a project may be
-further defined and clarified by project maintainers.
-
-### Enforcement
-
-Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported by contacting the project team at [INSERT EMAIL ADDRESS]. All
-complaints will be reviewed and investigated and will result in a response that
-is deemed necessary and appropriate to the circumstances. The project team is
-obligated to maintain confidentiality with regard to the reporter of an incident.
-Further details of specific enforcement policies may be posted separately.
-
-Project maintainers who do not follow or enforce the Code of Conduct in good
-faith may face temporary or permanent repercussions as determined by other
-members of the project's leadership.
-
-### Attribution
-
-This Code of Conduct is adapted from the [Contributor Covenant][homepage], version 1.4,
-available at [http://contributor-covenant.org/version/1/4][version]
-
-[homepage]: http://contributor-covenant.org
-[version]: http://contributor-covenant.org/version/1/4/
-
-### Caution
-
-- Linkedin monitors the number of profiles you view and the amount of connection request you send.
-- I strongly recommend you not to visit more than 1000 profiles and not send more than 100 connection request per week
-- To prevent this i have have added a checker which will break the loop if you exceed the above limits
-- In case of not obeying the caution, linkedin will send you a warning
-
-### To-Do
-
-- Create a web based interface
-
-### I hope you lend to your dream company soon, keep patience and best of luck for the further process

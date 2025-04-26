@@ -6,18 +6,13 @@ This document explains how to use the script files to automate the LinkedIn conn
 
 The LinkedIn Bot consists of three stages:
 
-1. **Stage 1**: Gathers company profiles from the companies listed in `config.py`
-2. **Stage 2**: Extracts role information from the profiles gathered in Stage 1
-3. **Stage 3**: Connects with professionals, prioritizing HR contacts first, using personalized messages
+1. **Stage**: Connects with professionals, prioritizing HR contacts first, using personalized messages
 
 ## Script Files
 
 The following script files are available:
 
-- `run_all_stages.sh`: Runs all stages in sequence
-- `run_stage1.sh`: Runs only Stage 1
-- `run_stage2.sh`: Runs only Stage 2
-- `run_stage3.sh`: Runs only Stage 3
+- `run_stage.sh`: Runs only Stage 3
 
 ## Prerequisites
 
@@ -32,7 +27,7 @@ Before running any scripts, make sure:
 To run the entire LinkedIn connection process:
 
 ```bash
-./run_all_stages.sh
+./run_stage.sh
 ```
 
 This will:
@@ -41,34 +36,6 @@ This will:
 2. Gather profiles from the companies listed in `config.py`
 3. Extract role information from these profiles
 4. Connect with professionals, prioritizing HR contacts first
-
-## Running Individual Stages
-
-If you prefer to run stages individually (for testing or if a stage fails):
-
-### Stage 1: Gather Profiles
-
-```bash
-./run_stage1.sh
-```
-
-This stage will create a file called `names_and_positions.csv` containing the profiles found.
-
-### Stage 2: Extract Role Information
-
-```bash
-./run_stage2.sh
-```
-
-This stage requires `names_and_positions.csv` from Stage 1. It will create a file called `roles_of_person_in_pervious_list.csv` containing work experience details.
-
-### Stage 3: Connect with HR Professionals
-
-```bash
-./run_stage3.sh
-```
-
-This stage will use the data from previous stages (if available) to prioritize HR professionals and send personalized connection requests.
 
 ## Logs
 

@@ -8,9 +8,7 @@ These files should be kept for the bot to function properly:
 
 ### Core Python Files
 
-- `stage1.py`: Collects profiles from target companies
-- `stage2.py`: Extracts role information from collected profiles
-- `stage3.py`: Connects with professionals, prioritizing HR contacts
+- `stage.py`: Connects with professionals, prioritizing HR contacts
 - `login.py`: Handles LinkedIn authentication
 - `config.py`: Contains configuration settings (credentials, companies, messages)
 - `dependencies.py`: Defines required libraries and imports
@@ -18,9 +16,7 @@ These files should be kept for the bot to function properly:
 ### Shell Scripts
 
 - `run_all_stages.sh`: Main script that runs the entire process
-- `run_stage1.sh`: Runs only Stage 1
-- `run_stage2.sh`: Runs only Stage 2
-- `run_stage3.sh`: Runs only Stage 3
+- `run_stage.sh`: Runs only Stage 3
 - `get_chrome_driver.sh`: Downloads ChromeDriver
 - `install_chrome.sh`: Installs Chrome browser
 - `cleanup.sh`: Removes unnecessary files
